@@ -1,0 +1,1 @@
+LOAD DATA INFILE '/db-data/us-population-2010-2019-reshaped.csv' INTO TABLE example.population FIELDS TERMINATED BY ',' IGNORE 1 LINES (state, state_code, state_code_id, year, population);

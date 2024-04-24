@@ -1,0 +1,102 @@
+version: '3'
+services:
+  frontend:
+    build:
+      context: frontend
+    command: npm start
+    environment:
+      - CI=true
+      - PORT=3000
+    ports:
+      - 3000:3000
+    volumes:
+      - ./frontend/src:/code/src
+      - /code/node_modules
+    networks:
+      - public
+    depends_on:
+      - backend
+  backend:
+    build:
+      context: backend
+    command: node src/index.js
+    environment:
+      - DATABASE_DB=example
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=/run/secrets/db-password
+      - DATABASE_HOST=db
+    ports:
+      - 80:80
+      - 9229:9229
+      - 9230:9230
+    secrets:
+      - db-password
+    volumes:
+      - ./backend/src:/code/src:ro
+      - ./backend/package.json:/code/package.json
+      - ./backend/package-lock.json:/code/package-lock.json
+      - back-notused:/opt/app/node_modules
+    networks:
+      - public
+      - private
+    healthcheck:
+      test: node healthcheck.js
+      interval: 30s
+    depends_on:
+      - db
+  db:
+    image: mariadb:10.6.4-focal
+    command: '--default-authentication-plugin=mysql_native_password'
+    restart: always
+    secrets:
+      - db-password
+    volumes:
+      - ./init_db/sql:/docker-entrypoint-initdb.d/
+      - ./init_db/data:/db-data
+    networks:
+      - private
+    environment:
+      - MYSQL_DATABASE=example
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db-password
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - 11434:11434
+    volumes:
+      - ./data:/root/.ollama
+  serveml:
+    build:
+      context: serveml
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - 8500:8500
+    expose:
+      - "8500"
+    working_dir: /src
+    command: uvicorn serve:app --port 8500 --host 0.0.0.0
+    healthcheck:
+      test: curl --fail http://localhost:8500/health || exit 1
+      interval: 30s
+  copilot:
+    build:
+      context: copilot
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - 8000:8000
+    expose:
+      - "8000"
+    healthcheck:
+      test: curl --fail http://localhost:8000/ || exit 1
+      interval: 30s
+    command: chainlit run /src/copilot.py
+secrets:
+  db-password:
+    file: db/password.txt
+networks:
+  public:
+  private:
+volumes:
+  back-notused:
+  db-data:
