@@ -1,41 +1,4 @@
-CREATE TABLE 
-    population (
-        id INT NOT NULL AUTO_INCREMENT, 
-        state VARCHAR(255), 
-        state_code VARCHAR(255), 
-        state_code_id INT, 
-        year INT, 
-        population INT,
-        PRIMARY KEY (id)
-    );
-
-CREATE TABLE
-    donations (
-        id INT NOT NULL AUTO_INCREMENT,
-        person_id INT,
-        date DATE,
-        amount DECIMAL(10, 2),
-        method ENUM(
-            'Cash',
-            'Credit',
-            'Debit',
-            'Check',
-            'Other'
-            ),
-        PRIMARY KEY (id)
-    );
-
-/*
-transaction_id (PK)
-person_id
-date
-gift amount
-frequency of giving
-method of giving (cash, credit, debit, PayPal, check, etc.)
-Lifetime value view
-upgrade/downgrade view
-donor pyramid
-*/
+USE db;
 
 CREATE TABLE
     people (
@@ -43,6 +6,16 @@ CREATE TABLE
         first_name VARCHAR(255),
         last_name VARCHAR(255),
         PRIMARY KEY (id)
+    );
+
+CREATE TABLE
+    donations (
+        id INT NOT NULL,
+        person_id INT NOT NULL,
+        date DATE,
+        amount DECIMAL(10, 2),
+        method VARCHAR(255),
+        PRIMARY KEY (id, person_id)
     );
 
 /*
