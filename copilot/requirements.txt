@@ -1,2 +1,0 @@
-chainlit==1.0.504
-langchain==0.1.15

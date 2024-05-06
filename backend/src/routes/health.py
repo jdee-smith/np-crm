@@ -1,16 +1,13 @@
-from fastapi import FastAPI, status
-from pydantic import BaseModel
+from fastapi import APIRouter, status
 
-app = FastAPI()
+from models.healthcheck import HealthCheck
 
-
-class HealthCheck(BaseModel):
-    status: str = "OK"
+router = APIRouter()
 
 
-@app.get(
+@router.get(
     "/health",
-    tags=["healthcheck"],
+    tags=["Healthcheck"],
     summary="Perform a health check.",
     response_description="Return HTTP Status Code 200 (OK).",
     status_code=status.HTTP_200_OK,

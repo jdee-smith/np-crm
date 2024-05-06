@@ -1,8 +1,19 @@
-USE db;
+CREATE EXTENSION citext;
+CREATE DOMAIN domain_email AS citext
+CHECK(VALUE ~ '^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$');
+
+CREATE TABLE
+    users (
+        id SERIAL,
+        email_address domain_email NOT NULL UNIQUE,
+        create_date DATE DEFAULT CURRENT_DATE,
+        password VARCHAR(255) NOT NULL,
+        PRIMARY KEY (email_address)
+    );
 
 CREATE TABLE
     people (
-        id INT NOT NULL AUTO_INCREMENT,
+        id SERIAL,
         first_name VARCHAR(255),
         last_name VARCHAR(255),
         PRIMARY KEY (id)

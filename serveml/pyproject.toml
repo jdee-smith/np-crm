@@ -1,9 +1,0 @@
-[tool.isort]
-src_paths = ["src"]
-
-[tool.black]
-verbose = false
-
-[tool.mypy]
-ignore_missing_imports = true
-pretty = true

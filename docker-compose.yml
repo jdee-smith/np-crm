@@ -1,8 +1,32 @@
 version: '3'
 services:
+  backend:
+    build:
+      context: backend
+    restart: always
+    environment:
+      - PYTHONUNBUFFERED=1
+      - POSTGRES_DB=db
+      - POSTGRES_USER=jason
+      - POSTGRES_PASSWORD=jason
+      - POSTGRES_HOST=db
+    ports:
+      - 8500:8500
+    expose:
+      - "8500"
+    command: poetry run uvicorn main:app --port 8500 --host 0.0.0.0
+    healthcheck:
+      test: curl --fail http://localhost:8500/health || exit 1
+      interval: 120s
+    networks:
+      - public
+      - private
+    depends_on:
+      - db
   frontend:
     build:
       context: frontend
+    restart: always
     command: npm start
     environment:
       - CI=true
@@ -16,70 +40,41 @@ services:
       - public
     depends_on:
       - backend
-  backend:
-    build:
-      context: backend
-    command: node src/index.js
-    environment:
-      - DATABASE_DB=db
-      - DATABASE_USER=root
-      - DATABASE_PASSWORD=/run/secrets/db-password
-      - DATABASE_HOST=db
-    ports:
-      - 80:80
-      - 9229:9229
-      - 9230:9230
-    secrets:
-      - db-password
+  db:
+    image: postgres:12
+    restart: always
     volumes:
-      - ./backend/src:/code/src:ro
-      - ./backend/package.json:/code/package.json
-      - ./backend/package-lock.json:/code/package-lock.json
-      - back-notused:/opt/app/node_modules
+      - ./db/init_db/sql:/docker-entrypoint-initdb.d/
+      - ./db/init_db/data:/db-data
+    networks:
+      - private
+    environment:
+      - POSTGRES_DB=db
+      - POSTGRES_USER=jason
+      - POSTGRES_PASSWORD=jason
+  adminer:
+    image: adminer
+    restart: always
     networks:
       - public
       - private
-    healthcheck:
-      test: node healthcheck.js
-      interval: 30s
     depends_on:
       - db
-  db:
-    image: mariadb:11
-    command: '--default-authentication-plugin=mysql_native_password'
-    restart: always
-    secrets:
-      - db-password
-    volumes:
-      - ./init_db/sql:/docker-entrypoint-initdb.d/
-      - ./init_db/data:/db-data
-    networks:
-      - private
     environment:
-      - MYSQL_DATABASE=db
-      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db-password
+      - ADMINER_DESIGN=pepa-linha-dark
+    ports:
+      - 8080:8080
   ollama:
     image: ollama/ollama:latest
+    restart: always
     ports:
       - 11434:11434
     volumes:
       - ./data:/root/.ollama
-  serveml:
-    build:
-      context: serveml
-    environment:
-      - PYTHONUNBUFFERED=1
-    ports:
-      - 8500:8500
-    expose:
-      - "8500"
-    command: uvicorn serve:app --port 8500 --host 0.0.0.0
-    healthcheck:
-      test: curl --fail http://localhost:8500/health || exit 1
-      interval: 30s
   copilot:
     build:
-      context: copilot
+      context: backend
+    restart: always
     environment:
       - PYTHONUNBUFFERED=1
     ports:
@@ -89,10 +84,7 @@ services:
     healthcheck:
       test: curl --fail http://localhost:8000/ || exit 1
       interval: 30s
-    command: chainlit run /src/copilot.py
-secrets:
-  db-password:
-    file: db/password.txt
+    command: poetry run chainlit run /src/copilot/main.py
 networks:
   public:
   private:

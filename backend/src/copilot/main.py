@@ -1,10 +1,7 @@
 import chainlit as cl
-from langchain.schema import StrOutputParser
 from langchain_community.llms import Ollama
-from prompts import text_to_sql
 
 model = Ollama(model="codellama", base_url="http://ollama:11434")
-chain = text_to_sql.prompt | model | StrOutputParser()
 
 
 @cl.on_chat_start

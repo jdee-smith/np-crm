@@ -1,0 +1,36 @@
+[tool.isort]
+src_paths = ["src"]
+profile = "black"
+
+[tool.black]
+verbose = false
+
+[tool.mypy]
+ignore_missing_imports = true
+pretty = true
+
+[tool.poetry]
+name = "backend"
+version = "0.0.1"
+description = ""
+authors = ["Hello World <my@email.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+uvicorn = "^0.25.0"
+fastapi = "^0.110.2"
+pydantic = "^2.7.1"
+chainlit = "^1.0.504"
+langchain = "^0.1.15"
+psycopg2 = "^2.9.9"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.7.0"
+black = "^24.4.2"
+isort = "^5.13.2"
+mypy = "^1.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
