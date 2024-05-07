@@ -5,11 +5,11 @@ services:
       context: backend
     restart: always
     environment:
-      - PYTHONUNBUFFERED=1
-      - POSTGRES_DB=db
-      - POSTGRES_USER=jason
-      - POSTGRES_PASSWORD=jason
-      - POSTGRES_HOST=db
+      - PYTHONUNBUFFERED=${PYTHON_UNBUFFERED}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_HOST=${DB_HOST}
     ports:
       - 8500:8500
     expose:
@@ -49,9 +49,9 @@ services:
     networks:
       - private
     environment:
-      - POSTGRES_DB=db
-      - POSTGRES_USER=jason
-      - POSTGRES_PASSWORD=jason
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
   adminer:
     image: adminer
     restart: always
@@ -61,7 +61,7 @@ services:
     depends_on:
       - db
     environment:
-      - ADMINER_DESIGN=pepa-linha-dark
+      - ADMINER_DESIGN=${ADMINER_DESIGN}
     ports:
       - 8080:8080
   ollama:
@@ -76,7 +76,7 @@ services:
       context: backend
     restart: always
     environment:
-      - PYTHONUNBUFFERED=1
+      - PYTHONUNBUFFERED=${PYTHON_UNBUFFERED}
     ports:
       - 8000:8000
     expose:

@@ -3,11 +3,12 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-db = os.environ.get("POSTGRES_DB")
-user = os.environ.get("POSTGRES_USER")
-password = os.environ.get("POSTGRES_PASSWORD")
-host = os.environ.get("POSTGRES_HOST")
-engine = create_engine(f"postgresql://{user}:{password}@{host}/{db}")
+DB = os.environ.get("POSTGRES_DB")
+USER = os.environ.get("POSTGRES_USER")
+PASSWORD = os.environ.get("POSTGRES_PASSWORD")
+HOST = os.environ.get("POSTGRES_HOST")
+
+engine = create_engine(f"postgresql://{USER}:{PASSWORD}@{HOST}/{DB}")
 
 
 def get_db():
