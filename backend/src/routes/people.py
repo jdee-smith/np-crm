@@ -4,27 +4,27 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy import sql
 from sqlalchemy.orm import Session
 
+from models.people import PeopleRead
 from models.success import Success
-from models.users import UserRead
 from utils.db import generate_id, get_db
 
 router = APIRouter()
 
 
 @router.post(
-    "/create_user/",
-    tags=["Users"],
+    "/create_person/",
+    tags=["People"],
     response_model=Success,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_user(
-    email_address: str, password: str, session: Session = Depends(get_db)
+async def create_person(
+    first_name: str, last_name: str, session: Session = Depends(get_db)
 ) -> Success:
     id = generate_id()
     sql_str = sql.text(
         f"""
-        INSERT INTO users (id, email_address, password)
-        VALUES ({id}, {email_address}, {password});
+        INSERT INTO people (id, first_name, last_name)
+        VALUES ({id}, {first_name}, {last_name});
         """
     )
     session.execute(sql_str)
@@ -33,36 +33,39 @@ async def create_user(
 
 
 @router.get(
-    "/read_users/",
-    tags=["Users"],
-    response_model=List[UserRead],
+    "/read_people/",
+    tags=["People"],
+    response_model=List[PeopleRead],
     status_code=status.HTTP_200_OK,
 )
-async def read_users(session: Session = Depends(get_db)) -> List[UserRead]:
+async def read_people(session: Session = Depends(get_db)) -> List[PeopleRead]:
     sql_str = sql.text(
         """
-        SELECT * 
-        FROM users;
+        SELECT *
+        FROM people;
         """
     )
     result = session.execute(sql_str).fetchall()
-    return [UserRead(id=i.id, email_address=i.email_address) for i in result]
+    return [
+        PeopleRead(id=i.id, first_name=i.first_name, last_name=i.last_name)
+        for i in result
+    ]
 
 
 @router.post(
-    "/update_user/",
-    tags=["Users"],
+    "/update_person/",
+    tags=["People"],
     response_model=Success,
     status_code=status.HTTP_200_OK,
 )
-async def update_user(
-    email_address: str, password, session: Session = Depends(get_db)
+async def update_person(
+    id: int, first_name: str, last_name: str, session: Session = Depends(get_db)
 ) -> Success:
     sql_str = sql.text(
         f"""
-        UPDATE users
-        SET password = {password}
-        WHERE email_address = {email_address};
+        UPDATE people
+        SET first_name = {first_name}, last_name = {last_name}
+        WHERE id = {id};
         """
     )
     session.execute(sql_str)
@@ -71,19 +74,17 @@ async def update_user(
 
 
 @router.post(
-    "/delete_user/",
-    tags=["Users"],
+    "/delete_person/",
+    tags=["People"],
     response_model=Success,
     status_code=status.HTTP_200_OK,
 )
-async def delete_user(
-    email_address: str, session: Session = Depends(get_db)
-) -> Success:
+async def delete_person(id: int, session: Session = Depends(get_db)) -> Success:
     sql_str = sql.text(
         f"""
         DELETE
-        FROM users
-        WHERE email_address = {email_address};
+        FROM people
+        WHERE id = {id};
         """
     )
     session.execute(sql_str)

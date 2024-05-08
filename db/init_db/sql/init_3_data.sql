@@ -1,7 +1,7 @@
-INSERT INTO users (email_address, password)
-VALUES ('superuser@example.com', 'superuser');
+INSERT INTO users (id, email_address, password)
+VALUES (1, 'superuser@example.com', 'superuser');
 
-COPY people (first_name, last_name)
+COPY people (id, first_name, last_name)
 FROM '/db-data/people.csv'
 HEADER CSV DELIMITER ',';
 
