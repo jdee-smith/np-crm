@@ -21,9 +21,11 @@ python = "^3.11"
 uvicorn = "^0.25.0"
 fastapi = "^0.110.2"
 pydantic = "^2.7.1"
+torch = "^2.3.0"
 chainlit = "^1.0.504"
 langchain = "^0.1.15"
 psycopg2 = "^2.9.9"
+chronos = { git = "https://github.com/amazon-science/chronos-forecasting.git", tag = "v1.1.0" }
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.7.0"

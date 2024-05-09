@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy import sql
 from sqlalchemy.orm import Session
 
-from models.people import PeopleRead
-from models.success import Success
-from utils.db import generate_id, get_db
+from gateway.api.models.people import PeopleRead
+from gateway.api.models.success import Success
+from gateway.utils.db import generate_id, get_db
 
 router = APIRouter()
 

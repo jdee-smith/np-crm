@@ -1,6 +1,6 @@
 version: '3'
 services:
-  backend:
+  gateway:
     build:
       context: backend
     restart: always
@@ -14,7 +14,7 @@ services:
       - 8500:8500
     expose:
       - "8500"
-    command: poetry run uvicorn main:app --port 8500 --host 0.0.0.0
+    command: poetry run uvicorn gateway.main:app --port 8500 --host 0.0.0.0
     healthcheck:
       test: curl --fail http://localhost:8500/health || exit 1
       interval: 120s
@@ -23,6 +23,8 @@ services:
       - private
     depends_on:
       - db
+      - forecast
+      - copilot
   frontend:
     build:
       context: frontend
@@ -39,7 +41,7 @@ services:
     networks:
       - public
     depends_on:
-      - backend
+      - gateway
   db:
     image: postgres:12
     restart: always
@@ -85,6 +87,26 @@ services:
       test: curl --fail http://localhost:8000/ || exit 1
       interval: 30s
     command: poetry run chainlit run /src/copilot/main.py
+  forecast:
+    build:
+      context: backend
+    restart: always
+    environment:
+      - PYTHONUNBUFFERED=${PYTHON_UNBUFFERED}
+      - FORECASTING_MODEL=${FORECASTING_MODEL}
+    ports:
+      - 8001:8001
+    expose:
+      - "8001"
+    command: poetry run uvicorn forecast.main:app --port 8001 --host 0.0.0.0
+    healthcheck:
+      test: curl --fail http://localhost:8001/health || exit 1
+      interval: 120s
+    networks:
+      - public
+      - private
+    depends_on:
+      - db
 networks:
   public:
   private:

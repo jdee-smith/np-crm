@@ -30,3 +30,13 @@ CREATE TABLE
         method VARCHAR(255),
         PRIMARY KEY (id, person_id)
     );
+
+CREATE TABLE
+    forecasts (
+        create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        id BIGINT NOT NULL,
+        type VARCHAR(255),
+        date DATE,
+        prediction DECIMAL(10, 2),
+        PRIMARY KEY (id, date)
+    )
