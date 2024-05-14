@@ -86,8 +86,39 @@ CREATE VIEW monthly_donation_amount_expanded AS
     */
     SELECT
         cte.month,
-        monthly_donation_amount.amount AS amount
+        COALESCE(monthly_donation_amount.amount, 0) AS amount
     FROM 
         cte
     LEFT JOIN
         monthly_donation_amount ON monthly_donation_amount.month = cte.month;
+
+
+CREATE VIEW point_forecasts AS
+    SELECT
+        id,
+        type,
+        series,
+        date,
+        AVG(forecast) AS forecast
+    FROM
+        sample_forecasts
+    GROUP BY
+        id, series, date, type
+    ORDER BY
+        id, series, date;
+
+
+CREATE VIEW quantile_forecasts AS
+    SELECT
+        id,
+        type,
+        series,
+        date,
+        quantile,
+        PERCENTILE_DISC(quantile) WITHIN GROUP (ORDER BY forecast) AS forecast
+    FROM
+        sample_forecasts, GENERATE_SERIES(0.01, 1, 0.01) AS quantile
+    GROUP BY
+        id, series, date, quantile, type
+    ORDER BY
+        id, series, date, quantile;

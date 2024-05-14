@@ -1,11 +1,17 @@
-from typing import List
-
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import sql
 from sqlalchemy.orm import Session
 
-from gateway.api.models.donations import DonationsRead
-from gateway.api.models.success import Success
+from gateway.api.models.donations import (
+    DonationsCreateRequest,
+    DonationsCreateResponse,
+    DonationsDeleteRequest,
+    DonationsDeleteResponse,
+    DonationsReadResponse,
+    DonationsUpdateRequest,
+    DonationsUpdateResponse,
+    IndividualDonation,
+)
 from gateway.utils.db import generate_id, get_db
 
 router = APIRouter()
@@ -14,35 +20,34 @@ router = APIRouter()
 @router.post(
     "/create_donation/",
     tags=["Donations"],
-    response_model=Success,
+    response_model=DonationsCreateResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_donation(
-    amount: float,
-    method: str,
-    person_id: List[int] = Query(None),
-    session: Session = Depends(get_db),
-) -> Success:
+    request: DonationsCreateRequest, session: Session = Depends(get_db)
+) -> DonationsCreateResponse:
     id = generate_id()
-    for i in person_id:
+    for i in request.person_id:
+        print(request.method)
+        print(request.date)
         sql_str = sql.text(
             f"""
-            INSERT INTO donations (id, person_id, amount, method)
-            VALUES ({id}, {i}, {amount}, {method});
+            INSERT INTO donations (id, person_id, date, amount, method)
+            VALUES ({id}, {i}, '{request.date}', {request.amount}, '{request.method}');
             """
         )
         session.execute(sql_str)
         session.commit()
-    return Success()
+    return DonationsCreateResponse(id=id)
 
 
 @router.get(
     "/read_donations/",
     tags=["Donations"],
-    response_model=List[DonationsRead],
+    response_model=DonationsReadResponse,
     status_code=status.HTTP_200_OK,
 )
-async def read_donations(session: Session = Depends(get_db)) -> List[DonationsRead]:
+async def read_donations(session: Session = Depends(get_db)) -> DonationsReadResponse:
     sql_str = sql.text(
         """
         SELECT *
@@ -50,8 +55,8 @@ async def read_donations(session: Session = Depends(get_db)) -> List[DonationsRe
         """
     )
     result = session.execute(sql_str).fetchall()
-    return [
-        DonationsRead(
+    donations = [
+        IndividualDonation(
             id=i.id,
             person_id=i.person_id,
             date=i.date,
@@ -60,43 +65,46 @@ async def read_donations(session: Session = Depends(get_db)) -> List[DonationsRe
         )
         for i in result
     ]
+    return DonationsReadResponse(donations=donations)
 
 
 @router.post(
     "/update_donation/",
     tags=["Donations"],
-    response_model=Success,
+    response_model=DonationsUpdateResponse,
     status_code=status.HTTP_200_OK,
 )
 async def update_donation(
-    id: int, date: str, amount: float, method: str, session: Session = Depends(get_db)
-) -> Success:
+    request: DonationsUpdateRequest, session: Session = Depends(get_db)
+) -> DonationsUpdateResponse:
     sql_str = sql.text(
         f"""
         UPDATE donations
-        SET date = {date}, amount = {amount}, method = {method}
-        WHERE id = {id};
+        SET last_updated = CURRENT_TIMESTAMP, date = '{request.date}', amount = {request.amount}, method = '{request.method}'
+        WHERE id = {request.id};
         """
     )
     session.execute(sql_str)
     session.commit()
-    return Success()
+    return DonationsUpdateResponse(id=request.id)
 
 
 @router.post(
     "/delete_donation/",
     tags=["Donations"],
-    response_model=Success,
+    response_model=DonationsDeleteResponse,
     status_code=status.HTTP_200_OK,
 )
-async def delete_donation(id: int, session: Session = Depends(get_db)) -> Success:
+async def delete_donation(
+    request: DonationsDeleteRequest, session: Session = Depends(get_db)
+) -> DonationsDeleteResponse:
     sql_str = sql.text(
         f"""
         DELETE
         FROM donations
-        WHERE id = {id};
+        WHERE id = {request.id};
         """
     )
     session.execute(sql_str)
     session.commit()
-    return Success()
+    return DonationsDeleteResponse(id=request.id)

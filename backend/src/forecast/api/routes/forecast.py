@@ -19,9 +19,9 @@ router = APIRouter()
     response_model=ForecastResponse,
     status_code=status.HTTP_200_OK,
 )
-async def predict(data: ForecastRequest) -> ForecastResponse:
+async def predict(request: ForecastRequest) -> ForecastResponse:
     global model
-    processed_context = preprocess(data.context)
-    preds = model.predict(processed_context, data.prediction_length)
-    processed_preds = postprocess(preds)
-    return ForecastResponse(predictions=processed_preds)
+    processed_context = preprocess(request.context)
+    forecasts = model.predict(processed_context, request.prediction_length)
+    processed_forecasts = postprocess(forecasts)
+    return ForecastResponse(forecasts=processed_forecasts)

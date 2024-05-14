@@ -1,10 +1,29 @@
 import datetime
+from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
-class ForecastsRead(BaseModel):
-    id: int
-    type: str
-    date: datetime.date
-    prediction: float
+class IndividualForecast(BaseModel):
+    id: int = Field()
+    type: str = Field()
+    series: int = Field()
+    sample: Optional[int] = Field(None)
+    date: datetime.date = Field()
+    forecast: float = Field()
+
+
+class ForecastsReadResponse(BaseModel):
+    forecasts: List[IndividualForecast] = Field()
+
+
+class ForecastsCreateResponse(BaseModel):
+    id: int = Field()
+
+
+class ForecastsDeleteRequest(BaseModel):
+    id: int = Field()
+
+
+class ForecastsDeleteResponse(BaseModel):
+    id: int = Field()

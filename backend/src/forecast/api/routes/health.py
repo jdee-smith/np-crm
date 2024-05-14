@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 
-from gateway.api.models.health import Health
+from forecast.api.models.health import Health
 
 router = APIRouter()
 

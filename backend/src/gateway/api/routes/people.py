@@ -1,11 +1,17 @@
-from typing import List
-
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import sql
 from sqlalchemy.orm import Session
 
-from gateway.api.models.people import PeopleRead
-from gateway.api.models.success import Success
+from gateway.api.models.people import (
+    IndividualPerson,
+    PeopleCreateRequest,
+    PeopleCreateResponse,
+    PeopleDeleteRequest,
+    PeopleDeleteResponse,
+    PeopleReadResponse,
+    PeopleUpdateRequest,
+    PeopleUpdateResponse,
+)
 from gateway.utils.db import generate_id, get_db
 
 router = APIRouter()
@@ -14,31 +20,31 @@ router = APIRouter()
 @router.post(
     "/create_person/",
     tags=["People"],
-    response_model=Success,
+    response_model=PeopleCreateResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_person(
-    first_name: str, last_name: str, session: Session = Depends(get_db)
-) -> Success:
+    request: PeopleCreateRequest, session: Session = Depends(get_db)
+) -> PeopleCreateResponse:
     id = generate_id()
     sql_str = sql.text(
         f"""
         INSERT INTO people (id, first_name, last_name)
-        VALUES ({id}, {first_name}, {last_name});
+        VALUES ({id}, '{request.first_name}', '{request.last_name}');
         """
     )
     session.execute(sql_str)
     session.commit()
-    return Success()
+    return PeopleCreateResponse(id=id)
 
 
 @router.get(
     "/read_people/",
     tags=["People"],
-    response_model=List[PeopleRead],
+    response_model=PeopleReadResponse,
     status_code=status.HTTP_200_OK,
 )
-async def read_people(session: Session = Depends(get_db)) -> List[PeopleRead]:
+async def read_people(session: Session = Depends(get_db)) -> PeopleReadResponse:
     sql_str = sql.text(
         """
         SELECT *
@@ -46,47 +52,50 @@ async def read_people(session: Session = Depends(get_db)) -> List[PeopleRead]:
         """
     )
     result = session.execute(sql_str).fetchall()
-    return [
-        PeopleRead(id=i.id, first_name=i.first_name, last_name=i.last_name)
+    people = [
+        IndividualPerson(id=i.id, first_name=i.first_name, last_name=i.last_name)
         for i in result
     ]
+    return PeopleReadResponse(people=people)
 
 
 @router.post(
     "/update_person/",
     tags=["People"],
-    response_model=Success,
+    response_model=PeopleUpdateResponse,
     status_code=status.HTTP_200_OK,
 )
 async def update_person(
-    id: int, first_name: str, last_name: str, session: Session = Depends(get_db)
-) -> Success:
+    request: PeopleUpdateRequest, session: Session = Depends(get_db)
+) -> PeopleUpdateResponse:
     sql_str = sql.text(
         f"""
         UPDATE people
-        SET first_name = {first_name}, last_name = {last_name}
-        WHERE id = {id};
+        SET last_updated = CURRENT_TIMESTAMP, first_name = '{request.first_name}', last_name = '{request.last_name}'
+        WHERE id = {request.id};
         """
     )
     session.execute(sql_str)
     session.commit()
-    return Success()
+    return PeopleUpdateResponse(id=request.id)
 
 
 @router.post(
     "/delete_person/",
     tags=["People"],
-    response_model=Success,
+    response_model=PeopleDeleteResponse,
     status_code=status.HTTP_200_OK,
 )
-async def delete_person(id: int, session: Session = Depends(get_db)) -> Success:
+async def delete_person(
+    request: PeopleDeleteRequest, session: Session = Depends(get_db)
+) -> PeopleDeleteResponse:
     sql_str = sql.text(
         f"""
         DELETE
         FROM people
-        WHERE id = {id};
+        WHERE id = {request.id};
         """
     )
     session.execute(sql_str)
     session.commit()
-    return Success()
+    return PeopleDeleteResponse(id=request.id)
