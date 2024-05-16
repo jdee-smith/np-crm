@@ -54,6 +54,8 @@ services:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    expose:
+      - "5432"
   adminer:
     image: adminer
     restart: always
@@ -70,7 +72,7 @@ services:
     image: ollama/ollama:latest
     restart: always
     ports:
-      - 11434:11434
+      - ${OLLAMA_PORT}:${OLLAMA_PORT}
     volumes:
       - ./data:/root/.ollama
   copilot:
@@ -79,6 +81,8 @@ services:
     restart: always
     environment:
       - PYTHONUNBUFFERED=${PYTHON_UNBUFFERED}
+      - OLLAMA_BASE_URL=http://${OLLAMA_SERVICE_NAME}:${OLLAMA_PORT}
+      - OLLAMA_MODEL=${OLLAMA_MODEL}
     ports:
       - 8000:8000
     expose:
@@ -87,13 +91,15 @@ services:
       test: curl --fail http://localhost:8000/ || exit 1
       interval: 30s
     command: poetry run chainlit run /src/copilot/main.py
+    depends_on:
+      - db
   forecast:
     build:
       context: backend
     restart: always
     environment:
       - PYTHONUNBUFFERED=${PYTHON_UNBUFFERED}
-      - FORECASTING_MODEL=${FORECASTING_MODEL}
+      - FORECAST_MODEL=${FORECAST_MODEL}
     ports:
       - 8001:8001
     expose:

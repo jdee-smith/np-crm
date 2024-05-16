@@ -33,3 +33,15 @@ CREATE OR REPLACE FUNCTION year(date)
     $$
         SELECT EXTRACT(YEAR FROM $1)::integer;
     $$;
+
+CREATE OR REPLACE FUNCTION squared_error(y_true DECIMAL, y_pred DECIMAL)
+    /*
+    Returns the squared error.
+    */
+    RETURNS DECIMAL
+    LANGUAGE 'sql'
+    IMMUTABLE
+    AS
+    $$
+        SELECT POWER(y_true - y_pred, 2);
+    $$;

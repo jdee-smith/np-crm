@@ -1,20 +1,23 @@
 import os
 
-import httpx
-from dateutil.relativedelta import relativedelta
+import requests
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import sql
 from sqlalchemy.orm import Session
 
 from forecast.api.models.forecast import ForecastRequest, ForecastResponse
 from gateway.api.models.forecasts import (
+    ForecastsCreateRequest,
     ForecastsCreateResponse,
     ForecastsDeleteRequest,
     ForecastsDeleteResponse,
+    ForecastsReadMetricsResponse,
     ForecastsReadResponse,
     IndividualForecast,
+    IndividualForecastMetrics,
 )
 from gateway.utils.constants import FORECAST_URL
+from gateway.utils.dates import last_day_of_relative_month_str
 from gateway.utils.db import generate_id, get_db
 
 PREDICTION_URL = os.path.join(FORECAST_URL, "predict")
@@ -23,20 +26,20 @@ router = APIRouter()
 
 
 @router.post(
-    "/create_forecast/donations/",
+    "/create_forecast/",
     tags=["Forecasts"],
     response_model=ForecastsCreateResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_forecast(
-    session: Session = Depends(get_db),
+    request: ForecastsCreateRequest, session: Session = Depends(get_db)
 ) -> ForecastsCreateResponse:
     id = generate_id()
     data_sql_str = sql.text(
         f"""
         SELECT *
-        FROM monthly_donation_amount_expanded
-        WHERE month != (SELECT MAX(month) FROM monthly_donation_amount_expanded);
+        FROM {request.table}
+        WHERE month != (SELECT MAX(month) FROM {request.table});
         """
     )
     ts = session.execute(data_sql_str).fetchall()
@@ -51,11 +54,11 @@ async def create_forecast(
     )
     settings = session.execute(settings_sql_str).fetchall()
     request = ForecastRequest(context=context, **dict(settings))
-    response = httpx.post(PREDICTION_URL, json=request.dict())
+    response = requests.post(PREDICTION_URL, json=request.dict())
     forecasts = ForecastResponse(forecasts=response.json()["forecasts"])
 
     for i in forecasts.forecasts:
-        date = (ts[-1][0] + relativedelta(months=i.step)).strftime("%Y-%m-%d")
+        date = last_day_of_relative_month_str(ts[-1][0], steps=i.step)
         insert_sql_str = sql.text(
             f"""
             INSERT INTO sample_forecasts (id, type, series, sample, date, forecast)
@@ -74,13 +77,13 @@ async def create_forecast(
     response_model=ForecastsReadResponse,
     status_code=status.HTTP_200_OK,
 )
-async def read_sample_forecasts(
+async def read_forecasts(
     session: Session = Depends(get_db),
 ) -> ForecastsReadResponse:
     sql_str = sql.text(
         """
         SELECT *
-        FROM sample_forecasts;
+        FROM forecasts;
         """
     )
     result = session.execute(sql_str).fetchall()
@@ -89,9 +92,19 @@ async def read_sample_forecasts(
             id=i.id,
             type=i.type,
             series=i.series,
-            sample=i.sample,
             date=i.date,
-            forecast=i.forecast,
+            mean=i.mean,
+            p5=i.p5,
+            p10=i.p10,
+            p20=i.p20,
+            p30=i.p30,
+            p40=i.p40,
+            p50=i.p50,
+            p60=i.p60,
+            p70=i.p70,
+            p80=i.p80,
+            p90=i.p90,
+            p95=i.p95,
         )
         for i in result
     ]
@@ -99,54 +112,23 @@ async def read_sample_forecasts(
 
 
 @router.get(
-    "/read_forecasts/point/",
+    "/read_metrics/",
     tags=["Forecasts"],
-    response_model=ForecastsReadResponse,
+    response_model=ForecastsReadMetricsResponse,
     status_code=status.HTTP_200_OK,
 )
-async def read_point_forecasts(
+async def read_metrics(
     session: Session = Depends(get_db),
-) -> ForecastsReadResponse:
+) -> ForecastsReadMetricsResponse:
     sql_str = sql.text(
         """
         SELECT *
-        FROM point_forecasts;
+        FROM aggregate_forecast_metrics
         """
     )
     result = session.execute(sql_str).fetchall()
-    forecasts = [
-        IndividualForecast(
-            id=i.id, type=i.type, series=i.series, date=i.date, forecast=i.forecast
-        )
-        for i in result
-    ]
-    return ForecastsReadResponse(forecasts=forecasts)
-
-
-@router.get(
-    "/read_forecasts/quantile/",
-    tags=["Forecasts"],
-    response_model=ForecastsReadResponse,
-    status_code=status.HTTP_200_OK,
-)
-async def read_quantile_forecasts(
-    quantile: float, session: Session = Depends(get_db)
-) -> ForecastsReadResponse:
-    sql_str = sql.text(
-        f"""
-        SELECT *
-        FROM quantile_forecasts
-        WHERE quantile = {quantile};
-        """
-    )
-    result = session.execute(sql_str).fetchall()
-    forecasts = [
-        IndividualForecast(
-            id=i.id, type=i.type, series=i.series, date=i.date, forecast=i.forecast
-        )
-        for i in result
-    ]
-    return ForecastsReadResponse(forecasts=forecasts)
+    forecasts = [IndividualForecastMetrics(id=i.id, mse=i.mse) for i in result]
+    return ForecastsReadMetricsResponse(forecasts=forecasts)
 
 
 @router.post(

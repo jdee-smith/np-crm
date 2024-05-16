@@ -93,13 +93,24 @@ CREATE VIEW monthly_donation_amount_expanded AS
         monthly_donation_amount ON monthly_donation_amount.month = cte.month;
 
 
-CREATE VIEW point_forecasts AS
+CREATE VIEW forecasts AS
     SELECT
         id,
         type,
         series,
         date,
-        AVG(forecast) AS forecast
+        ROUND(AVG(forecast), 2) AS mean,
+        PERCENTILE_DISC(0.05) WITHIN GROUP (ORDER BY forecast) AS p5,
+        PERCENTILE_DISC(0.1) WITHIN GROUP (ORDER BY forecast) AS p10,
+        PERCENTILE_DISC(0.2) WITHIN GROUP (ORDER BY forecast) AS p20,
+        PERCENTILE_DISC(0.3) WITHIN GROUP (ORDER BY forecast) AS p30,
+        PERCENTILE_DISC(0.4) WITHIN GROUP (ORDER BY forecast) AS p40,
+        PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY forecast) AS p50,
+        PERCENTILE_DISC(0.6) WITHIN GROUP (ORDER BY forecast) AS p60,
+        PERCENTILE_DISC(0.7) WITHIN GROUP (ORDER BY forecast) AS p70,
+        PERCENTILE_DISC(0.8) WITHIN GROUP (ORDER BY forecast) AS p80,
+        PERCENTILE_DISC(0.9) WITHIN GROUP (ORDER BY forecast) AS p90,
+        PERCENTILE_DISC(0.95) WITHIN GROUP (ORDER BY forecast) AS p95
     FROM
         sample_forecasts
     GROUP BY
@@ -108,17 +119,29 @@ CREATE VIEW point_forecasts AS
         id, series, date;
 
 
-CREATE VIEW quantile_forecasts AS
+CREATE VIEW item_level_forecast_metrics AS
+    WITH cte as (
+        SELECT
+            f.*,
+            a.amount as actual
+        FROM forecasts f
+        LEFT JOIN monthly_donation_amount a ON f.date = a.month WHERE f.type = 'Donations'
+    )
+
     SELECT
         id,
-        type,
         series,
-        date,
-        quantile,
-        PERCENTILE_DISC(quantile) WITHIN GROUP (ORDER BY forecast) AS forecast
-    FROM
-        sample_forecasts, GENERATE_SERIES(0.01, 1, 0.01) AS quantile
+        AVG(SQUARED_ERROR(actual, mean)) as mse
+    FROM 
+        cte
     GROUP BY
-        id, series, date, quantile, type
-    ORDER BY
-        id, series, date, quantile;
+        id, series;
+
+CREATE VIEW aggregate_forecast_metrics AS
+    SELECT
+        id,
+        AVG(mse) as mse
+    FROM
+        item_level_forecast_metrics
+    GROUP BY
+        id;

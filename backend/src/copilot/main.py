@@ -1,7 +1,12 @@
+import os
+
 import chainlit as cl
 from langchain_community.llms import Ollama
 
-model = Ollama(model="codellama", base_url="http://ollama:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL")
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL")
+
+model = Ollama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
 
 
 @cl.on_chat_start

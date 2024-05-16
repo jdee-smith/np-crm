@@ -7,8 +7,8 @@ from forecast.api.models.forecast import ForecastRequest, ForecastResponse
 from forecast.utils.postprocess import postprocess
 from forecast.utils.preprocess import preprocess
 
-MODEL = os.environ.get("FORECASTING_MODEL")
-model = ChronosPipeline.from_pretrained(MODEL)
+FORECAST_MODEL = os.environ.get("FORECAST_MODEL")
+model = ChronosPipeline.from_pretrained(FORECAST_MODEL)
 
 router = APIRouter()
 
