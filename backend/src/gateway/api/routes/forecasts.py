@@ -93,18 +93,7 @@ async def read_forecasts(
             type=i.type,
             series=i.series,
             date=i.date,
-            mean=i.mean,
-            p5=i.p5,
-            p10=i.p10,
-            p20=i.p20,
-            p30=i.p30,
-            p40=i.p40,
-            p50=i.p50,
-            p60=i.p60,
-            p70=i.p70,
-            p80=i.p80,
-            p90=i.p90,
-            p95=i.p95,
+            values={"mean": i.mean, "p5": i.p5, "p10": i.p10, "p20": i.p20, "p30": i.p30, "p40": i.p40, "p50": i.p50, "p60": i.p60, "p70": i.p70, "p80": i.p80, "p90": i.p90, "p95": i.p95}
         )
         for i in result
     ]
@@ -127,7 +116,7 @@ async def read_metrics(
         """
     )
     result = session.execute(sql_str).fetchall()
-    forecasts = [IndividualForecastMetrics(id=i.id, mse=i.mse) for i in result]
+    forecasts = [IndividualForecastMetrics(id=i.id, metrics={"mse": i.mse}) for i in result]
     return ForecastsReadMetricsResponse(forecasts=forecasts)
 
 
