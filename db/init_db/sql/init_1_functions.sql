@@ -39,9 +39,31 @@ CREATE OR REPLACE FUNCTION squared_error(y_true DECIMAL, y_pred DECIMAL)
     Returns the squared error.
     */
     RETURNS DECIMAL
-    LANGUAGE 'sql'
+    LANGUAGE 'plpgsql'
     IMMUTABLE
     AS
     $$
-        SELECT POWER(y_true - y_pred, 2);
+    BEGIN
+        RETURN POWER(y_true - y_pred, 2);
+    END;
+    $$;
+
+CREATE OR REPLACE FUNCTION quantile_loss(y_true DECIMAL, y_pred DECIMAL, alpha DECIMAL)
+    /*
+    Returns quantile loss as a specified quantile.
+    */
+    RETURNS DECIMAL
+    LANGUAGE 'plpgsql'
+    IMMUTABLE
+    AS
+    $$
+    DECLARE
+        error DECIMAL;
+        sign DECIMAL;
+    BEGIN
+        SELECT y_true - y_pred INTO error;
+        SELECT CASE WHEN error >= 0.0 THEN 1.0 ELSE 0.0 END INTO sign;
+        
+        RETURN alpha * sign * error - (1 - alpha) * (1 - sign) * error;
+    END;
     $$;
