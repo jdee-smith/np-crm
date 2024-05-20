@@ -132,7 +132,7 @@ CREATE VIEW item_level_forecast_metrics AS
         id,
         series,
         AVG(SQUARED_ERROR(actual, mean)) as mse,
-        AVG(QUANTILE_LOSS(actual, mean, 0.5)) as ql_50
+        AVG(QUANTILE_LOSS(actual, mean, 0.5)) as mql_50
     FROM 
         cte
     GROUP BY
@@ -142,7 +142,7 @@ CREATE VIEW aggregate_forecast_metrics AS
     SELECT
         id,
         AVG(mse) as mse,
-        AVG(ql_50) as ql_50
+        AVG(ql_50) as mql_50
     FROM
         item_level_forecast_metrics
     GROUP BY

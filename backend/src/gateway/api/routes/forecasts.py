@@ -116,7 +116,7 @@ async def read_metrics(
         """
     )
     result = session.execute(sql_str).fetchall()
-    forecasts = [IndividualForecastMetrics(id=i.id, metrics={"mse": i.mse, "ql_50": i.ql_50}) for i in result]
+    forecasts = [IndividualForecastMetrics(id=i.id, metrics={"mse": i.mse, "ql_50": i.mql_50}) for i in result]
     return ForecastsReadMetricsResponse(forecasts=forecasts)
 
 

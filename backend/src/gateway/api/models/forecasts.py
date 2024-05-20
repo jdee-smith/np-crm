@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Literal, Dict
+from typing import List, Literal, Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +16,7 @@ class IndividualForecast(BaseModel):
 
 class IndividualForecastMetrics(BaseModel):
     id: int = Field()
-    metrics: Dict[str, float] = Field()
+    metrics: Dict[str, Optional[float]] = Field()
 
 
 class ForecastsReadResponse(BaseModel):
