@@ -132,7 +132,17 @@ CREATE VIEW item_level_forecast_metrics AS
         id,
         series,
         AVG(SQUARED_ERROR(actual, mean)) as mse,
-        AVG(QUANTILE_LOSS(actual, mean, 0.5)) as mql_50
+        AVG(QUANTILE_LOSS(actual, p5, 0.05)) as mql_p5,
+        AVG(QUANTILE_LOSS(actual, p10, 0.1)) as mql_p10,
+        AVG(QUANTILE_LOSS(actual, p20, 0.2)) as mql_p20,
+        AVG(QUANTILE_LOSS(actual, p30, 0.3)) as mql_p30,
+        AVG(QUANTILE_LOSS(actual, p40, 0.4)) as mql_p40,
+        AVG(QUANTILE_LOSS(actual, p50, 0.5)) as mql_p50,
+        AVG(QUANTILE_LOSS(actual, p60, 0.6)) as mql_p60,
+        AVG(QUANTILE_LOSS(actual, p70, 0.7)) as mql_p70,
+        AVG(QUANTILE_LOSS(actual, p80, 0.8)) as mql_p80,
+        AVG(QUANTILE_LOSS(actual, p90, 0.9)) as mql_p90,
+        AVG(QUANTILE_LOSS(actual, p95, 0.95)) as mql_p95
     FROM 
         cte
     GROUP BY
@@ -142,7 +152,17 @@ CREATE VIEW aggregate_forecast_metrics AS
     SELECT
         id,
         AVG(mse) as mse,
-        AVG(ql_50) as mql_50
+        AVG(mql_p5) as mql_p5,
+        AVG(mql_p10) as mql_p10,
+        AVG(mql_p20) as mql_p20,
+        AVG(mql_p30) as mql_p30,
+        AVG(mql_p40) as mql_p40,
+        AVG(mql_p50) as mql_p50,
+        AVG(mql_p60) as mql_p60,
+        AVG(mql_p70) as mql_p70,
+        AVG(mql_p80) as mql_p80,
+        AVG(mql_p90) as mql_p90,
+        AVG(mql_p95) as mql_p95
     FROM
         item_level_forecast_metrics
     GROUP BY

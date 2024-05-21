@@ -12,24 +12,15 @@ from gateway.api.models.donations import (
     DonationsUpdateResponse,
     IndividualDonation,
 )
-from gateway.utils.db import generate_id, get_db
+from gateway.utils.db import generate_id, get_db, map_result
 
 router = APIRouter()
 
 
-@router.post(
-    "/create_donation/",
-    tags=["Donations"],
-    response_model=DonationsCreateResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_donation(
-    request: DonationsCreateRequest, session: Session = Depends(get_db)
-) -> DonationsCreateResponse:
+@router.post("/create_donation/", tags=["Donations"], response_model=DonationsCreateResponse, status_code=status.HTTP_201_CREATED)
+async def create_donation(request: DonationsCreateRequest, session: Session = Depends(get_db)) -> DonationsCreateResponse:
     id = generate_id()
     for i in request.person_id:
-        print(request.method)
-        print(request.date)
         sql_str = sql.text(
             f"""
             INSERT INTO donations (id, person_id, date, amount, method)
@@ -41,42 +32,17 @@ async def create_donation(
     return DonationsCreateResponse(id=id)
 
 
-@router.get(
-    "/read_donations/",
-    tags=["Donations"],
-    response_model=DonationsReadResponse,
-    status_code=status.HTTP_200_OK,
-)
+@router.get("/read_donations/", tags=["Donations"], response_model=DonationsReadResponse, status_code=status.HTTP_200_OK)
 async def read_donations(session: Session = Depends(get_db)) -> DonationsReadResponse:
-    sql_str = sql.text(
-        """
-        SELECT *
-        FROM donations;
-        """
-    )
-    result = session.execute(sql_str).fetchall()
-    donations = [
-        IndividualDonation(
-            id=i.id,
-            person_id=i.person_id,
-            date=i.date,
-            amount=i.amount,
-            method=i.method,
-        )
-        for i in result
-    ]
+    sql_str = sql.text("SELECT * FROM donations;")
+    cursor = session.execute(sql_str)
+    result = map_result(cursor)
+    donations = [IndividualDonation(**i) for i in result]
     return DonationsReadResponse(donations=donations)
 
 
-@router.post(
-    "/update_donation/",
-    tags=["Donations"],
-    response_model=DonationsUpdateResponse,
-    status_code=status.HTTP_200_OK,
-)
-async def update_donation(
-    request: DonationsUpdateRequest, session: Session = Depends(get_db)
-) -> DonationsUpdateResponse:
+@router.post("/update_donation/", tags=["Donations"], response_model=DonationsUpdateResponse, status_code=status.HTTP_200_OK)
+async def update_donation(request: DonationsUpdateRequest, session: Session = Depends(get_db)) -> DonationsUpdateResponse:
     sql_str = sql.text(
         f"""
         UPDATE donations
@@ -86,25 +52,12 @@ async def update_donation(
     )
     session.execute(sql_str)
     session.commit()
-    return DonationsUpdateResponse(id=request.id)
+    return DonationsUpdateResponse(**request)
 
 
-@router.post(
-    "/delete_donation/",
-    tags=["Donations"],
-    response_model=DonationsDeleteResponse,
-    status_code=status.HTTP_200_OK,
-)
-async def delete_donation(
-    request: DonationsDeleteRequest, session: Session = Depends(get_db)
-) -> DonationsDeleteResponse:
-    sql_str = sql.text(
-        f"""
-        DELETE
-        FROM donations
-        WHERE id = {request.id};
-        """
-    )
+@router.post("/delete_donation/", tags=["Donations"], response_model=DonationsDeleteResponse, status_code=status.HTTP_200_OK)
+async def delete_donation(request: DonationsDeleteRequest, session: Session = Depends(get_db)) -> DonationsDeleteResponse:
+    sql_str = sql.text("DELETE FROM donations WHERE id = {request.id};")
     session.execute(sql_str)
     session.commit()
-    return DonationsDeleteResponse(id=request.id)
+    return DonationsDeleteResponse(**request)

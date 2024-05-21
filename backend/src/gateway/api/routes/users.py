@@ -12,20 +12,13 @@ from gateway.api.models.users import (
     UsersUpdateRequest,
     UsersUpdateResponse,
 )
-from gateway.utils.db import generate_id, get_db
+from gateway.utils.db import generate_id, get_db, map_result
 
 router = APIRouter()
 
 
-@router.post(
-    "/create_user/",
-    tags=["Users"],
-    response_model=UsersCreateResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_user(
-    request: UsersCreateRequest, session: Session = Depends(get_db)
-) -> UsersCreateResponse:
+@router.post("/create_user/", tags=["Users"], response_model=UsersCreateResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(request: UsersCreateRequest, session: Session = Depends(get_db)) -> UsersCreateResponse:
     id = generate_id()
     sql_str = sql.text(
         f"""
@@ -38,33 +31,17 @@ async def create_user(
     return UsersCreateResponse(id=id)
 
 
-@router.get(
-    "/read_users/",
-    tags=["Users"],
-    response_model=UsersReadResponse,
-    status_code=status.HTTP_200_OK,
-)
+@router.get("/read_users/", tags=["Users"], response_model=UsersReadResponse, status_code=status.HTTP_200_OK)
 async def read_users(session: Session = Depends(get_db)) -> UsersReadResponse:
-    sql_str = sql.text(
-        """
-        SELECT * 
-        FROM users;
-        """
-    )
-    result = session.execute(sql_str).fetchall()
-    users = [IndividualUser(id=i.id, email_address=i.email_address) for i in result]
+    sql_str = sql.text("SELECT * FROM users;")
+    cursor = session.execute(sql_str)
+    result = map_result(cursor)
+    users = [IndividualUser(**i) for i in result]
     return UsersReadResponse(users=users)
 
 
-@router.post(
-    "/update_user/",
-    tags=["Users"],
-    response_model=UsersUpdateResponse,
-    status_code=status.HTTP_200_OK,
-)
-async def update_user(
-    request: UsersUpdateRequest, session: Session = Depends(get_db)
-) -> UsersUpdateResponse:
+@router.post("/update_user/", tags=["Users"], response_model=UsersUpdateResponse, status_code=status.HTTP_200_OK)
+async def update_user(request: UsersUpdateRequest, session: Session = Depends(get_db)) -> UsersUpdateResponse:
     sql_str = sql.text(
         f"""
         UPDATE users
@@ -74,25 +51,12 @@ async def update_user(
     )
     session.execute(sql_str)
     session.commit()
-    return UsersUpdateResponse(email_address=request.email_address)
+    return UsersUpdateResponse(**request)
 
 
-@router.post(
-    "/delete_user/",
-    tags=["Users"],
-    response_model=UsersDeleteResponse,
-    status_code=status.HTTP_200_OK,
-)
-async def delete_user(
-    request: UsersDeleteRequest, session: Session = Depends(get_db)
-) -> UsersDeleteResponse:
-    sql_str = sql.text(
-        f"""
-        DELETE
-        FROM users
-        WHERE email_address = '{request.email_address}';
-        """
-    )
+@router.post("/delete_user/", tags=["Users"], response_model=UsersDeleteResponse, status_code=status.HTTP_200_OK)
+async def delete_user(request: UsersDeleteRequest, session: Session = Depends(get_db)) -> UsersDeleteResponse:
+    sql_str = sql.text("DELETE FROM users WHERE email_address = '{request.email_address}';")
     session.execute(sql_str)
     session.commit()
-    return UsersDeleteResponse(email_address=request.email_address)
+    return UsersDeleteResponse(**request)

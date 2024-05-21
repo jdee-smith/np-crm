@@ -9,4 +9,4 @@ router = APIRouter()
     "/health/", tags=["Health"], status_code=status.HTTP_200_OK, response_model=Health
 )
 async def service_health() -> Health:
-    return Health(status="OK")
+    return Health()

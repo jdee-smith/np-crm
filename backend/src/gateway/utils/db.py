@@ -1,10 +1,11 @@
 import os
 from random import choice
 from string import digits
-from typing import Generator
+from typing import Generator, Any, Dict
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+from sqlalchemy.engine.cursor import CursorResult
 
 from gateway.utils.constants import ID_LEN
 
@@ -27,3 +28,9 @@ def get_db() -> Generator:
 def generate_id() -> str:
     id = "".join(choice(digits) for i in range(ID_LEN))
     return id
+
+
+def map_result(cursor: CursorResult) -> Dict[str, Any]:
+    col_names = list(cursor.keys())
+    rows = cursor.all()
+    return [dict(zip(col_names, row)) for row in rows]
